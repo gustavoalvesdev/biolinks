@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Page;
+use App\Models\Link;
 
 class AdminController extends Controller
 {
@@ -92,4 +93,46 @@ class AdminController extends Controller
         ]);
     }
 
+    // Exibe os links de cada página baseado no slug
+    public function pageLinks($slug) 
+    {   
+
+        $user = Auth::user();
+
+        // Previne contra acessos não permitidos realizados
+        // por outros usuários 
+        $page = Page::where('slug', $slug)
+            ->where('id_user', $user->id)
+        ->first();
+
+        if ($page) {
+
+            $links = Link::where('id_page', $page->id)
+                ->orderBy('order', 'ASC')
+                ->get();
+
+            return view('admin/page_links' , [
+                'menu' => 'links',
+                // informações da página
+                'page' => $page,
+                'links' => $links
+            ]);
+        }
+
+        return redirect('/admin');
+    }
+
+    public function pageDesign($slug) 
+    {
+        return view('admin/page_design' , [
+            'menu' => 'design'
+        ]);
+    }
+
+    public function pageStats($slug) 
+    {
+        return view('admin/page_stats' , [
+            'menu' => 'stats'
+        ]);
+    }
 }
