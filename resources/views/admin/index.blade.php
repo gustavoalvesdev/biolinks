@@ -12,7 +12,7 @@
         <thead>
             <tr>
                 <th>Título</th>
-                <th>Ações</th>
+                <th width="20">Ações</th>
             </tr>
         </thead>
         <tbody>
