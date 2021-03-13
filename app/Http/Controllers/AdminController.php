@@ -10,9 +10,9 @@ use App\Models\Link;
 
 class AdminController extends Controller
 {
-    public function __construct() 
+    public function __construct()
     {
-        $this->middleware('auth', ['except' => 
+        $this->middleware('auth', ['except' =>
             [
                 'login',
                 'loginAction',
@@ -50,7 +50,7 @@ class AdminController extends Controller
         ]);
     }
 
-    public function registerAction(Request $request) 
+    public function registerAction(Request $request)
     {
         $credencials = $request->only('email', 'password');
 
@@ -94,13 +94,13 @@ class AdminController extends Controller
     }
 
     // Exibe os links de cada página baseado no slug
-    public function pageLinks($slug) 
-    {   
+    public function pageLinks($slug)
+    {
 
         $user = Auth::user();
 
         // Previne contra acessos não permitidos realizados
-        // por outros usuários 
+        // por outros usuários
         $page = Page::where('slug', $slug)
             ->where('id_user', $user->id)
         ->first();
@@ -122,17 +122,87 @@ class AdminController extends Controller
         return redirect('/admin');
     }
 
-    public function pageDesign($slug) 
+    public function linkOrderUpdate($linkId, $pos)
+    {
+        $user = Auth::user();
+
+        /*
+            - Verificar se o link pertence a uma página do usuário logado
+            - lógica para trocar o ORDER no banco de dados
+                - verificar se subiu ou desceu
+                - se subiu:
+                    - jogar os próximos itens para baixo
+                - se desceu:
+                    - jogar os itens anteriores para cima
+                - substituo o item que quero mudar
+                - atualizo todos os links
+        */
+
+        $link = Link::find($linkId);
+
+        $myPages = [];
+        $myPagesQuery = Page::where('id_user', $user->id)->get();
+        foreach($myPagesQuery as $pageItem) {
+            $myPages[] = $pageItem->id;
+        }
+
+        if (in_array($link->id_page, $myPages)) {
+
+            if ($link->order > $pos) {
+                // subiu o item
+                // jogando os próximos para baixo
+                $afterLinks = Link::where('id_page', $link->id_page)
+                    ->where('order', '>=', $pos)
+                    ->get();
+
+                foreach($afterLinks as $afterLink) {
+                    $afterLink->order++;
+                    $afterLink->save();
+                }
+            } elseif ($link->order < $pos) {
+                // desceu item
+                // jogando os anteriores para cima
+                $beforeLinks = Link::where('id_page', $link->id_page)
+                    ->where('order', '<=', $pos)
+                    ->get();
+
+                foreach($beforeLinks as $beforeLink) {
+                    $beforeLink->order--;
+                    $beforeLink->save();
+                }
+            }
+
+            // Posicionando o item
+            $link->order = $pos;
+            $link->save();
+
+            // Corrigindo as posições
+            $allLinks = Link::where('id_page', $link->id_page)
+                ->orderBy('order', 'ASC')
+                ->get();
+
+            foreach($allLinks as $linkKey => $linkItem) {
+                $linkItem->order = $linkKey;
+                $linkItem->save();
+            }
+
+        }
+
+        return [];
+    }
+
+    public function pageDesign($slug)
     {
         return view('admin/page_design' , [
             'menu' => 'design'
         ]);
     }
 
-    public function pageStats($slug) 
+    public function pageStats($slug)
     {
         return view('admin/page_stats' , [
             'menu' => 'stats'
         ]);
     }
+
 }
