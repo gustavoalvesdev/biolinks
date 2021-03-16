@@ -38,6 +38,8 @@ Route::prefix('/admin')->group(function() {
 
     Route::get('/{slug}/newlink', [AdminController::class, 'newLink']);
     Route::post('/{slug}/newlink', [AdminController::class, 'newLinkAction']);
+
+    Route::get('/{slug}/editlink/{linkId}', [AdminController::class, 'editLink']);
 });
 
 Route::get('/{slug}', [PageController::class, 'index']);
